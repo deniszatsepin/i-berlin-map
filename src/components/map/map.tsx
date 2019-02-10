@@ -28,6 +28,7 @@ interface IMapState {
 export class Map extends Component<IMapProps, IMapState> {
   map: any = null;
   maps: any = null;
+  bounds: any = null;
 
   static defaultProps = {
       center: {
@@ -49,34 +50,41 @@ export class Map extends Component<IMapProps, IMapState> {
 
   componentDidMount() {
     Promise.all([this.getMaps(), fetchFeatures()])
-    .then(([{map, maps}, features]) => {
-      const polygons = features.map((feature, index) => {
-        const color = getColor(feature.properties.averageAge);
-        const polygon = new maps.Polygon({
-          paths: feature.geometry.coordinates,
-          strokeColor: color,
-          strokeOpacity: 0.8,
-          strokeWeight: 3,
-          fillColor: color,
-          fillOpacity: 0.35,
-          index
+      .then(([{ map, maps }, features]) => {
+        const polygons = features.map((feature, index) => {
+          const color = getColor(feature.properties.averageAge);
+          const polygon = new maps.Polygon({
+            paths: feature.geometry.coordinates,
+            strokeColor: color,
+            strokeOpacity: 0.8,
+            strokeWeight: 3,
+            fillColor: color,
+            fillOpacity: 0.35,
+            index
+          });
+          polygon.setMap(map);
+
+          polygon.addListener('click', this.showInfo);
+
+          return polygon;
         });
-        polygon.setMap(map);
 
-        polygon.addListener('click', this.showInfo);
+        this.setState({
+          features,
+          polygons
+        });
 
-        return polygon;
-      });
+        this.bounds = new maps.LatLngBounds();
 
-      this.setState({
-        features,
-        polygons
-      });
+        polygons.forEach(polygon => {
+          polygon.getPath().forEach((point: any) => this.bounds.extend(point))
+        });
 
-    })
-    .catch(err => {
-      console.error(err);
-    })
+        map.fitBounds(this.bounds);
+      })
+      .catch(err => {
+        console.error(err);
+      })
   }
 
   showInfo = (e: any) => {
