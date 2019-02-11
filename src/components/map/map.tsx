@@ -88,7 +88,6 @@ export class Map extends Component<IMapProps, IMapState> {
   }
 
   showInfo = (e: any) => {
-    console.log(e);
     const polygon = this.state.polygons.find(polygon => this.maps.geometry.poly.containsLocation(e.latLng, polygon));
 
     const feature = this.state.features[polygon.index];
